@@ -1,0 +1,40 @@
+{
+	"folders": [
+		{
+			"path": "../.dart_tool"
+		},
+		{
+			"path": "../.idea"
+		},
+		{
+			"path": "../android"
+		},
+		{
+			"path": "../build"
+		},
+		{
+			"path": "../ios"
+		},
+		{
+			"path": "."
+		},
+		{
+			"path": "../linux"
+		},
+		{
+			"path": "../macos"
+		},
+		{
+			"path": "../test"
+		},
+		{
+			"path": "../web"
+		},
+		{
+			"path": "../windows"
+		}
+	],
+	"settings": {
+		"liveServer.settings.multiRootWorkspaceName": "lib"
+	}
+}
