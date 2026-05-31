@@ -389,21 +389,40 @@ class _CausesPageState extends State<CausesPage> {
               children: [
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: () async {
-                      // Navigate to chat with organization
-                      final orgId = cause['orgId'];
-                      final orgName = cause['org'] ?? 'Organization';
+                      onPressed: () async {
+                        // Navigate to chat with organization
+                        final orgId = cause['orgId'];
+                        final orgName = cause['org'] ?? 'Organization';
 
-                      if (orgId == null) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                              content:
-                                  Text('Could not find organization contact info')),
-                        );
-                        return;
-                      }
+                        if (orgId == null) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                                content:
+                                    Text('Could not find organization contact info')),
+                          );
+                          return;
+                        }
 
-                      Navigator.push(
+                        try {
+                          final user = FirebaseAuth.instance.currentUser;
+                          if (user != null) {
+                            await FirebaseFirestore.instance.collection('users').doc(user.uid).update({
+                              'points': FieldValue.increment(200),
+                            });
+                          }
+                          if (!context.mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Donated to cause! +200 pts awarded.'),
+                              backgroundColor: Color(0xFF3B6D11),
+                            ),
+                          );
+                        } catch (e) {
+                          debugPrint('Error updating points: $e');
+                        }
+
+                        if (!context.mounted) return;
+                        Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder: (context) => ChatPage(
@@ -423,7 +442,7 @@ class _CausesPageState extends State<CausesPage> {
                       ),
                     ),
                     child: const Text(
-                      'Donate items',
+                      'Donate items +200 pts',
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.bold,

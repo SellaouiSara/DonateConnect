@@ -4,6 +4,7 @@
 // ============================================================
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class WaitingListPage extends StatefulWidget {
   const WaitingListPage({super.key});
@@ -288,15 +289,28 @@ class _WaitingListPageState extends State<WaitingListPage> {
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      'Donation targeted to ${name.split(' ')[0]}! +200 pts will be awarded on completion.',
+              onPressed: () async {
+                try {
+                  final user = FirebaseAuth.instance.currentUser;
+                  if (user != null) {
+                    await FirebaseFirestore.instance.collection('users').doc(user.uid).update({
+                      'points': FieldValue.increment(200),
+                    });
+                  }
+                  if (!context.mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        'Donated to ${name.split(' ')[0]}! +200 pts awarded.',
+                      ),
+                      backgroundColor: const Color(0xFF3B6D11),
                     ),
-                    backgroundColor: const Color(0xFF3B6D11),
-                  ),
-                );
+                  );
+                } catch (e) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Error: $e')),
+                  );
+                }
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFFEF9F27),

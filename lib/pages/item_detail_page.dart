@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-
+import 'package:geocoding/geocoding.dart';
 class ItemDetailPage extends StatefulWidget {
   final Map<String, dynamic> item;
   final String? itemId;
@@ -15,6 +15,30 @@ class ItemDetailPage extends StatefulWidget {
 
 class _ItemDetailPageState extends State<ItemDetailPage> {
   bool _isClaiming = false;
+  String? _address;
+
+  @override
+  void initState() {
+    super.initState();
+    _resolveAddress();
+  }
+
+  Future<void> _resolveAddress() async {
+    final loc = widget.item['location'];
+    if (loc != null && loc is GeoPoint) {
+      try {
+        List<Placemark> placemarks = await placemarkFromCoordinates(loc.latitude, loc.longitude);
+        if (placemarks.isNotEmpty) {
+          final p = placemarks.first;
+          setState(() {
+            _address = [p.street, p.locality, p.administrativeArea].where((e) => e != null && e.isNotEmpty).join(', ');
+          });
+        }
+      } catch (e) {
+        debugPrint('Geocoding error: $e');
+      }
+    }
+  }
 
   Future<void> _markAsClaimed(BuildContext context) async {
     if (widget.itemId == null) return;
@@ -139,64 +163,70 @@ class _ItemDetailPageState extends State<ItemDetailPage> {
                   const SizedBox(height: 12),
                   Row(
                     children: [
-                      GestureDetector(
-                        onTap: () {
-                          if (item['location'] != null && item['location'] is GeoPoint) {
-                            showDialog(
-                              context: context,
-                              builder: (context) => AlertDialog(
-                                title: const Text('Item Location'),
-                                content: SizedBox(
-                                  width: double.maxFinite,
-                                  height: 300,
-                                  child: GoogleMap(
-                                    initialCameraPosition: CameraPosition(
-                                      target: LatLng(
-                                        (item['location'] as GeoPoint).latitude,
-                                        (item['location'] as GeoPoint).longitude,
-                                      ),
-                                      zoom: 14,
-                                    ),
-                                    markers: {
-                                      Marker(
-                                        markerId: const MarkerId('item_location'),
-                                        position: LatLng(
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () {
+                            if (item['location'] != null && item['location'] is GeoPoint) {
+                              showDialog(
+                                context: context,
+                                builder: (context) => AlertDialog(
+                                  title: const Text('Item Location'),
+                                  content: SizedBox(
+                                    width: double.maxFinite,
+                                    height: 300,
+                                    child: GoogleMap(
+                                      initialCameraPosition: CameraPosition(
+                                        target: LatLng(
                                           (item['location'] as GeoPoint).latitude,
                                           (item['location'] as GeoPoint).longitude,
                                         ),
+                                        zoom: 14,
                                       ),
-                                    },
-                                    zoomControlsEnabled: true,
-                                    scrollGesturesEnabled: true,
+                                      markers: {
+                                        Marker(
+                                          markerId: const MarkerId('item_location'),
+                                          position: LatLng(
+                                            (item['location'] as GeoPoint).latitude,
+                                            (item['location'] as GeoPoint).longitude,
+                                          ),
+                                        ),
+                                      },
+                                      zoomControlsEnabled: true,
+                                      scrollGesturesEnabled: true,
+                                    ),
                                   ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () => Navigator.pop(context),
+                                      child: const Text('Close', style: TextStyle(color: Color(0xFFEF9F27))),
+                                    ),
+                                  ],
                                 ),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () => Navigator.pop(context),
-                                    child: const Text('Close', style: TextStyle(color: Color(0xFFEF9F27))),
-                                  ),
-                                ],
-                              ),
-                            );
-                          } else {
-                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No precise location available.')));
-                          }
-                        },
+                              );
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No precise location available.')));
+                            }
+                          },
                         child: Row(
                           children: [
                             const Icon(Icons.location_on_outlined,
                                 size: 14, color: Color(0xFFEF9F27)),
                             const SizedBox(width: 4),
-                            Text(
-                              item['distance'] ?? 'Nearby',
-                              style: const TextStyle(
-                                fontSize: 12,
-                                color: Color(0xFFEF9F27),
-                                decoration: TextDecoration.underline,
+                            Expanded(
+                              child: Text(
+                                _address ?? item['distance'] ?? (item['location'] != null ? 'View on map' : 'Location not provided'),
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: Color(0xFFEF9F27),
+                                  decoration: TextDecoration.underline,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
                           ],
                         ),
+                      ),
                       ),
                       const SizedBox(width: 16),
                       const Icon(Icons.star, size: 14, color: Color(0xFFEF9F27)),

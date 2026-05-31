@@ -9,6 +9,7 @@ import 'chat_list_page.dart';
 import 'notifications_page.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../utils/time_utils.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -480,9 +481,9 @@ class _HomePageState extends State<HomePage> {
                       ],
                     ),
                     const SizedBox(height: 4),
-                    const Text(
-                      'Just now',
-                      style: TextStyle(
+                    Text(
+                      TimeUtils.formatTimeAgo(item['createdAt']),
+                      style: const TextStyle(
                         fontSize: 11,
                         color: Color(0xFFB4B2A9),
                       ),

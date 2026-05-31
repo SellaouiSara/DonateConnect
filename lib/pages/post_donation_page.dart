@@ -84,11 +84,27 @@ class _PostDonationPageState extends State<PostDonationPage> {
         .collection('requests')
         .where('status', isEqualTo: 'approved')
         .where('category', isEqualTo: category)
-        .limit(2)
         .get();
 
+    final titleText = _titleController.text.trim().toLowerCase();
+    final titleWords = titleText.split(RegExp(r'\s+')).where((w) => w.length > 2).toSet();
+
+    final filtered = snapshot.docs.where((doc) {
+      final reqTitle = (doc.data()['item'] ?? doc.data()['title'] ?? '').toString().toLowerCase();
+      if (titleText.isEmpty) return false; // Require title for accurate matching
+      
+      // Check if request title contains the full donation title or vice versa
+      if (reqTitle.contains(titleText) || titleText.contains(reqTitle)) return true;
+
+      // Check for word intersections
+      for (var word in titleWords) {
+        if (reqTitle.contains(word)) return true;
+      }
+      return false;
+    }).take(2).map((doc) => {...doc.data(), 'id': doc.id}).toList();
+
     setState(() {
-      _realMatches = snapshot.docs.map((doc) => {...doc.data(), 'id': doc.id}).toList();
+      _realMatches = filtered;
     });
   }
 
@@ -259,6 +275,7 @@ class _PostDonationPageState extends State<PostDonationPage> {
               const SizedBox(height: 6),
               TextFormField(
                 controller: _titleController,
+                onChanged: (v) => _findMatches(_selectedCategory),
                 decoration: _inputStyle('e.g. Wheelchair in good condition'),
                 validator: (v) => v!.isEmpty ? 'Please enter a title' : null,
               ),
