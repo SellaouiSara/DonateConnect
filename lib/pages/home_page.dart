@@ -87,7 +87,7 @@ class _HomePageState extends State<HomePage> {
         unselectedItemColor: const Color(0xFFB4B2A9),
         selectedFontSize: 11,
         unselectedFontSize: 11,
-        elevation: 8,
+        elevation: 8, //Adds shadow
         items: [
           const BottomNavigationBarItem(
             icon: Icon(Icons.home_outlined),
@@ -131,7 +131,7 @@ class _HomePageState extends State<HomePage> {
           _buildHeader(),
           _buildUrgentRequestsPreview(),
           Expanded(
-            child: StreamBuilder<QuerySnapshot>(
+            child: StreamBuilder<QuerySnapshot>(  //No refresh button needed
               stream: FirebaseFirestore.instance
                   .collection('donations')
                   .orderBy('createdAt', descending: true)
@@ -438,7 +438,7 @@ class _HomePageState extends State<HomePage> {
                       ),
               ),
               const SizedBox(width: 14),
-              Expanded(
+              Expanded(                                          //Makes the donation list occupy all remaining space
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
